@@ -1,4 +1,3 @@
-#define MESSAGE_SIZE 4096
 #define ITERATIONS   1000000
 
 #include "hydrogen.h"
@@ -95,30 +94,38 @@ bool benchmark(const Crypto *crypto, const size_t message_size, const size_t ite
 
 int main() {
 	bool ok = true;
+for(int MESSAGE_SIZE = 16; MESSAGE_SIZE <= 16384; MESSAGE_SIZE *= 2) {
+	printf("Message Size: %d\n", MESSAGE_SIZE);
 #if BENCHMARK_HYDROGEN
 	if (!benchmark(hydrogen_get(), MESSAGE_SIZE, ITERATIONS)) {
 		ok = false;
+		break;
 	}
 #endif
 #if BENCHMARK_NSS
 	if (!benchmark(nss_get(), MESSAGE_SIZE, ITERATIONS)) {
 		ok = false;
+		break;
 	}
 #endif
 #if BENCHMARK_OPENSSL
 	if (!benchmark(openssl_get(), MESSAGE_SIZE, ITERATIONS)) {
 		ok = false;
+		break;
 	}
 #endif
 #if BENCHMARK_SODIUM
 	if (!benchmark(sodium_get(), MESSAGE_SIZE, ITERATIONS)) {
 		ok = false;
+		break;
 	}
 #endif
 #if BENCHMARK_WOLFCRYPT
 	if (!benchmark(wolfcrypt_get(), MESSAGE_SIZE, ITERATIONS)) {
 		ok = false;
+		break;
 	}
 #endif
-	return ok ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

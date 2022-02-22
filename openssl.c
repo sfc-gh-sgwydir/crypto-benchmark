@@ -1,8 +1,9 @@
 #include "openssl.h"
 
 #include <openssl/err.h>
-#include <openssl/evp.h>
+#include <openssl/aead.h>
 #include <openssl/rand.h>
+#include <stdlib.h>
 
 #define openssl_error() (ERR_error_string(ERR_get_error(), NULL))
 
@@ -24,7 +25,6 @@ const char *openssl_name() {
 const char **openssl_ciphers() {
 	static const char *names[] = {
 		CIPHER_AES_256_GCM,
-		CIPHER_AES_256_OCB,
 		CIPHER_CHACHA20_POLY1305,
 		NULL
 	};
@@ -39,8 +39,8 @@ bool openssl_init(void **param) {
 
 	OpenSSLParam *op = malloc(sizeof(OpenSSLParam));
 
-	op->ctx_encrypt = EVP_CIPHER_CTX_new();
-	op->ctx_decrypt = EVP_CIPHER_CTX_new();
+	op->ctx_encrypt = EVP_AEAD_CTX_new();
+	op->ctx_decrypt = EVP_AEAD_CTX_new();
 
 	*param = op;
 
@@ -81,11 +81,9 @@ bool openssl_set_cipher(void *param, const char *cipher) {
 	OpenSSLParam *op = param;
 
 	if (cipher == CIPHER_AES_256_GCM) {
-		op->current_cipher = EVP_aes_256_gcm();
-	} else if (cipher == CIPHER_AES_256_OCB) {
-		op->current_cipher = EVP_aes_256_ocb();
+		op->current_cipher = EVP_aead_aes_256_gcm();
 	} else if (cipher == CIPHER_CHACHA20_POLY1305) {
-		op->current_cipher = EVP_chacha20_poly1305();
+		op->current_cipher = EVP_aead_chacha20_poly1305();
 	} else {
 		printf("openssl_set_cipher(): \"%s\" is not a recognized cipher!\n", cipher);
 		return false;
@@ -145,9 +143,9 @@ size_t openssl_decrypt(void *param, const size_t size, void *dst, const void *sr
 }
 
 int openssl_aead(OpenSSLParam *op, const bool enc, unsigned char *dst, const int size, const unsigned char *src) {
-	EVP_CIPHER_CTX *ctx = enc ? op->ctx_encrypt : op->ctx_decrypt;
+	EVP_AEAD_CTX *ctx = enc ? op->ctx_encrypt : op->ctx_decrypt;
 
-	if (op->current_cipher == EVP_aes_256_gcm() || op->current_cipher == EVP_aes_256_ocb()) {
+	if (op->current_cipher == EVP_aead_aes_256_gcm()) {
 		// EVP_CipherUpdate() fails if we don't specify the IV every time.
 		EVP_CipherInit(ctx, NULL, NULL, op->iv, -1);
 	}
