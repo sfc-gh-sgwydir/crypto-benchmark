@@ -2,11 +2,15 @@ cmake_minimum_required(VERSION 3.1)
 
 project(crypto_benchmark)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 option(hydrogen "Build libhydrogen benchmark" OFF)
-option(nss "Build NSS benchmark" ON)
+option(nss "Build NSS benchmark" OFF)
 option(openssl "Build OpenSSL benchmark" ON)
-option(sodium "Build libsodium benchmark" ON)
+option(sodium "Build libsodium benchmark" OFF)
 option(wolfcrypt "Build wolfCrypt benchmark" ON)
+option(boringssl "Build boringSSL benchmark" ON)
 
 find_package(Threads
 	REQUIRED
@@ -173,5 +177,32 @@ if(wolfcrypt)
 	target_link_libraries(crypto_benchmark
 		PRIVATE
 			${wolfssl_LIBRARIES}
+	)
+endif()
+
+if(boringssl)
+	find_package(BoringSSL
+		REQUIRED
+	)
+
+	target_compile_definitions(crypto_benchmark
+		PRIVATE
+			"BENCHMARK_BORINGSSL"
+	)
+
+	target_include_directories(crypto_benchmark
+		PRIVATE
+			${BORINGSSL_INCLUDE_DIR}
+	)
+
+	target_sources(crypto_benchmark
+		PRIVATE
+			"boringssl.c"
+			"boringssl.h"
+	)
+
+	target_link_libraries(crypto_benchmark
+		PRIVATE
+			${BORINGSSL_CRYPTO_LIBRARY}
 	)
 endif()
